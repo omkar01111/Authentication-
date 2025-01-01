@@ -1,7 +1,7 @@
 import { User } from "../models/user.js";
 import bcrypt from "bcryptjs";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
-import { sendVarificationEmail } from "../mailtrap/emails.js";
+import { sendVarificationEmail, sendWelcomeEmail } from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -26,7 +26,7 @@ export const signup = async (req, res) => {
       password: hashPassword,
       name,
       verificationToken,
-      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, //for 24 hours
+      verificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000, //for 24 hours
     });
 
     await user.save();
@@ -35,20 +35,54 @@ export const signup = async (req, res) => {
 
     generateTokenAndSetCookie(res, user._id);
 
-    await  sendVarificationEmail(user.email, verificationToken);
-    res,
-      status(201).json({
-        sucess: true,
-        message: "User created successfully",
-        user: {
-          ...user.doc,
-          password: undefined,
-        },
-      });
+    await sendVarificationEmail(user.email, verificationToken);
+    res.status(201).json({
+      sucess: true,
+      message: "User created successfully",
+      user: {
+        ...user.doc,
+        password: undefined,
+      },
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+// verify email
+export const verifyEmail = async (req, res) => {
+  // user get 6 digit code
+
+  const { code } = req.body;
+
+  try {
+    const user = await User.findOne({
+      verificationToken: code,
+
+      verificationTokenExpires: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+    await user.save();
+
+    await sendWelcomeEmail(user.email, user.name);
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      user: {
+        ...user._doc,
+        password: undefined,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const login = async (req, res) => {
   res.send("login");
 };
