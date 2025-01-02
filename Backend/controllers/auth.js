@@ -3,7 +3,12 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
-import { sendVarificationEmail, sendResetSucessEmail, sendWelcomeEmail,sendResetPasswordEmail } from "../mailtrap/emails.js";
+import {
+  sendVarificationEmail,
+  sendResetSucessEmail,
+  sendWelcomeEmail,
+  sendResetPasswordEmail,
+} from "../mailtrap/emails.js";
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -118,61 +123,92 @@ export const login = async (req, res) => {
   }
 };
 
-export const forgotPassword= async(req,res)=>{
-  const {email} = req.body;
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
   try {
-    const user=await User.findOne({email});
-    
-    if(!user){
-      return res.status(400).json({success:false, message:"User not found"});
-    } 
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
+    }
     //GENRATE RESET TOKEN
 
-    const resetToken=crypto.randomBytes(20).toString("hex");
-    const resetPasswordExpiresAt=Date.now()+1*60*60*1000;
+    const resetToken = crypto.randomBytes(20).toString("hex");
+    const resetPasswordExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
 
-    user.resetPasswordToken=resetToken;
-    user.resetPasswordExpires=resetPasswordExpiresAt;
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetPasswordExpiresAt;
     await user.save();
 
     //send email
-    await sendResetPasswordEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`);
+    await sendResetPasswordEmail(
+      user.email,
+      `${process.env.CLIENT_URL}/reset-password/${resetToken}`
+    );
 
-    res.status(200).json({success:true, message:"Reset password link sent to your email"});
+    res.status(200).json({
+      success: true,
+      message: "Reset password link sent to your email",
+    });
   } catch (error) {
-    res.status(400).json({success:false, message:error.message}); 
+    res.status(400).json({ success: false, message: error.message });
   }
-}
+};
 
-export const resetPassword=async(req,res)=>{
+export const resetPassword = async (req, res) => {
   try {
-    const {token}=req.params;
-    const {password}=req.body;
+    const { token } = req.params;
+    const { password } = req.body;
 
-    const user=await User.findOne({
-      resetPasswordToken:token,
-      resetPasswordExpires:{$gt:Date.now()}
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
-    if(!user){
-      return res.status(400).json({success:false, message:"Invalid or expired token"});
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired token" });
     }
 
-    const hashedPassword=await bcrypt.hash(password, 10);
-    user.password=hashedPassword;
-    user.resetPasswordToken=undefined;
-    user.resetPasswordExpires=undefined;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
 
     await user.save();
     await sendResetSucessEmail(user.email);
-    res.status(200).json({success:true, message:"Password reset successfully"});  
-
+    res
+      .status(200)
+      .json({ success: true, message: "Password reset successfully" });
   } catch (error) {
-    res.status(400).json({success:false, message:error.message});
+    res.status(400).json({ success: false, message: error.message });
   }
-}
+};
 
 export const logout = async (req, res) => {
   res.clearCookie("token");
   res.status(200).json({ success: true, message: "Logged out successfully" });
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
+    }
+    res.status(200).json({
+      success: true,
+      message: "User is authenticated",
+      user: {
+        ...user._doc,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
 };
