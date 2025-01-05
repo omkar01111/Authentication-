@@ -1,7 +1,7 @@
 import {Routes,Route} from "react-router-dom"
 import FloatingShape from "./components/FloatingShape.jsx"
 import SignUpPage from "./pages/SignUpPage.jsx"
-import LoginPage from "./LoginPage.jsx"
+import LoginPage from "./pages/LoginPage.jsx"
 
 function App() {
 
