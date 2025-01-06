@@ -8,6 +8,7 @@ import EmailVarificationPage from "./pages/EmailVarificationPage.jsx";
 import { useAuthStore } from "./store/authStore.js";
 import { useEffect } from "react";
 import DashboardPage from "./pages/DashboardPage.jsx";
+import LoadingSpinner from "./components/LoadingSpinner.jsx";
 
 //protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -36,8 +37,8 @@ function App() {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-  console.log();
-
+  
+if(isCheckingAuth)return<LoadingSpinner/>
   return (
     <div
       className="min-h-screen bg-gradient-to-br
