@@ -10,7 +10,7 @@ import { useEffect } from "react";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import LoadingSpinner from "./components/LoadingSpinner.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
-import ResetPasswordPage from "./pages/ResetPasswordPage.JSX";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 
 
 
