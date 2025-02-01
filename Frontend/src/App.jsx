@@ -11,35 +11,50 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import LoadingSpinner from "./components/LoadingSpinner.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
+import GoogleCallback from "./pages/GoogleCallback.jsx";
 
 
 
-//protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, isCheckingAuth } = useAuthStore();
+
+  if (isCheckingAuth) {
+    return <LoadingSpinner />; // Show loading while auth state is being checked
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
   if (!user.isVerified) {
     return <Navigate to="/verify-email" replace />;
   }
+
   return children;
 };
-
-//redirect authenticated user to home app
 
 const RedirectAuthenticatedUser = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore();
-  if (isAuthenticated && user.isVerified) {
-    return <Navigate to="/" replace={true} />;
+  const { isAuthenticated, user, isCheckingAuth } = useAuthStore();
+
+  if (isCheckingAuth) {
+    return <LoadingSpinner />;
   }
+
+  if (isAuthenticated && user.isVerified) {
+    return <Navigate to="/" replace />;
+  }
+
+
   return children;
 };
+
 
 function App() {
   const { checkAuth, isCheckingAuth,  } = useAuthStore();
   useEffect(() => {
     checkAuth();
+    console.log(isCheckingAuth);
+    
   }, [checkAuth]);
   
 if(isCheckingAuth)return<LoadingSpinner/>
@@ -104,7 +119,9 @@ if(isCheckingAuth)return<LoadingSpinner/>
         <Route path="/reset-password/:token" element={<RedirectAuthenticatedUser>
           <ResetPasswordPage />
         </RedirectAuthenticatedUser>} />
+      <Route path="/auth/google/callback" element={<GoogleCallback />} />
       </Routes>
+
 
       <Toaster />
     </div>

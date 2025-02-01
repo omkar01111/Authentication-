@@ -1,14 +1,18 @@
 import { User } from "../models/user.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import passport from "passport";
 
-import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import {
   sendVerificationEmail,
   sendResetSuccessEmail,
   sendWelcomeEmail,
   sendResetPasswordEmail,
 } from "../nodemailer/emails.js";
+import {
+  generateToken,
+  setTokenCookie,
+} from "../utils/generateTokenAndSetCookie.js";
 
 export const signup = async (req, res) => {
   const { email, password, name } = req.body;
@@ -36,11 +40,13 @@ export const signup = async (req, res) => {
       name,
       verificationToken,
       verificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      isVerified: false,
     });
 
     await user.save();
 
-    generateTokenAndSetCookie(res, user._id);
+    const token = generateToken(user._id); //genrate token
+    setTokenCookie(res, token); //setcookies
 
     await sendVerificationEmail(user.email, verificationToken);
     res.status(201).json({
@@ -107,7 +113,9 @@ export const login = async (req, res) => {
         .json({ success: false, message: "Invalid credentials" });
     }
 
-    generateTokenAndSetCookie(res, user._id);
+    const token = generateToken(user._id);
+    setTokenCookie(res, token);
+
     user.lastLogin = new Date();
     await user.save();
 
@@ -124,6 +132,22 @@ export const login = async (req, res) => {
   }
 };
 
+export const googleAuthCallback = async (req, res, next) => {
+  passport.authenticate("google", (err, data) => {
+    if (err || !data) {
+      return res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`);
+    }
+    // console.log(data);
+
+    const { user } = data;
+    req.session.user = user._id;
+    const token = generateToken(user._id);
+    setTokenCookie(res, token);
+
+    res.redirect(`${process.env.CLIENT_URL}/`);
+  })(req, res, next);
+};
+
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -131,29 +155,25 @@ export const forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
 
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    const resetPasswordExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetPasswordExpiresAt;
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 24 * 60 * 60 * 1000; // 1 hour
     await user.save();
 
-    await sendResetPasswordEmail(
-      user.email,
-      `${process.env.CLIENT_URL}/reset-password/${resetToken}`
-    );
+    const resetURL = `${process.env.CLIENT_URL}/reset-password/${hashedToken}`;
+    await sendResetPasswordEmail(user.email, resetURL);
 
-    res.status(200).json({
-      success: true,
-      message: "Reset password link sent to your email",
-    });
+    res.status(200).json({ message: "Reset password link sent to your email" });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -196,21 +216,28 @@ export const logout = async (req, res) => {
 };
 
 export const checkAuth = async (req, res) => {
+  // console.log("Authenticated user:", req.user);
+
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const user = await User.findById(req.user).select("-password");
+    // console.log(user);
+
     if (!user) {
       return res
         .status(400)
         .json({ success: false, message: "User not found" });
     }
+    // console.log("Authenticated user:", req.user);
+
     res.status(200).json({
       success: true,
       message: "User is authenticated",
-      user: {
-        ...user._doc,
-      },
+      user: { ...user._doc },
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

@@ -23,6 +23,10 @@ const SignUpPage = () => {
     }
   };
 
+  const handleGoogleLogin = () => {
+    // Redirect to the backend Google authentication route
+    window.location.href = "http://localhost:5000/api/auth/google";
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -86,6 +90,14 @@ const SignUpPage = () => {
           </Link>
         </p>
       </div>
+      <div className="mt-6">
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full py-3 px-4 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200"
+          >
+            Login with Google
+          </button>
+        </div>
     </motion.div>
   );
 };

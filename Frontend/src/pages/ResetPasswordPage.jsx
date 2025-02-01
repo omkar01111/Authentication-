@@ -78,6 +78,7 @@ const ResetPasswordPage = () => {
 					</motion.button>
 				</form>
 			</div>
+			
 		</motion.div>
 	);
 };

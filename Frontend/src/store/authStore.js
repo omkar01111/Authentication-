@@ -11,6 +11,8 @@ export const useAuthStore = create((set) => ({
   isLoading: false,
   isCheckingAuth: true,
   message:null,
+  setUser: (user) => set({ user }),
+  setAuthenticated: (status) => set({ isAuthenticated: status }),
 
   signup: async (email, password, name) => {
     set({ isLoading: true, error: null });
@@ -52,6 +54,29 @@ export const useAuthStore = create((set) => ({
       throw error;
     }
   },
+  googleLogin: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.get(`${API_URL}/check-auth`, {
+        withCredentials: true,
+      });
+      set({
+        isAuthenticated: true,
+        user: response.data.user,
+        isLoading: false,
+      });
+      // Redirect to dashboard after successful login
+      window.location.href = "/";
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || "Google authentication failed",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+  
+  
   logout: async () => {
 		set({ isLoading: true, error: null });
 		try {
@@ -83,22 +108,30 @@ export const useAuthStore = create((set) => ({
   },
 
   checkAuth: async () => {
-    set({ isCheckingAuth: true, error: null });
+    set({ isCheckingAuth: true }); // Set checking state
+    
     try {
-      const response = await axios.get(`${API_URL}/check-auth`);
+      const response = await axios.get(`${API_URL}/check-auth`, {
+        withCredentials: true,
+      });
+      console.log("checkAuth response:", response.data);
+
+  
       set({
-        user: response.data.user,
         isAuthenticated: true,
+        user: response.data.user,
         isCheckingAuth: false,
       });
     } catch (error) {
+      console.error("Error checking authentication:", error.response?.data?.message);
       set({
-        error: error.response.data.message || "Error Checking Auth",
-        isCheckingAuth: false,isAuthenticated:false 
+        isAuthenticated: false,
+        user: null,
+        isCheckingAuth: false,
       });
-      throw error;
     }
   },
+  
   forgotPassword:async(email)=>{
     set({ isLoading: true, error: null, });
 

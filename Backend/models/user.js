@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    googleId: {
+      type: String, // To store Google user ID
+      unique: true,
+      sparse: true, // Ensures this field is indexed but allows null values
+    },
     lastLogin: {
       type: Date,
       default: Date.now,

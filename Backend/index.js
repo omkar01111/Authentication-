@@ -6,6 +6,9 @@ import path from "path";
 
 import { connectDB } from "./db/connectDB.js";
 import authRoutes from "./routes/auth.js";
+import passport from "./passportJS/passport.js";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 
 dotenv.config();
 
@@ -17,6 +20,26 @@ app.use(
     credentials: true,
   })
 );
+
+
+app.use(session({
+  secret: process.env.SESSION_SECRET, // Use a separate secret
+  resave: false,
+  saveUninitialized: false, // Do not save empty sessions
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI, // Store sessions in MongoDB
+    ttl: 14 * 24 * 60 * 60, // Session expires in 14 days
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // Secure only in production
+    sameSite: "strict", // Prevent CSRF
+    maxAge: 7 * 24 * 60 * 60 * 1000, // Cookie expiry (7 days)
+  },
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 const PORT = process.env.PORT;
 
