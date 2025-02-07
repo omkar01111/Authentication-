@@ -21,9 +21,7 @@ passport.use(
         // Check if user exists by email
         let user = await User.findOne({ email: profile._json.email });
 
-
         if (!user) {
-          // Generate a random password
           const newPassword = generateSecurePassword();
           const hashedPassword = await bcrypt.hash(newPassword, 10);
 
