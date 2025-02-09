@@ -210,6 +210,32 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+export const updatePassword = async (req, res) => {
+  const { password, newPassword } = req.body;
+  try {
+    const user = await User.findById(req.user);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User Not found" });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid credentials" });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const logout = async (req, res) => {
   res.clearCookie("token");
   res.status(200).json({ success: true, message: "Logged out successfully" });

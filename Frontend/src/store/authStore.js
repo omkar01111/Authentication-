@@ -114,7 +114,7 @@ export const useAuthStore = create((set) => ({
       const response = await axios.get(`${API_URL}/check-auth`, {
         withCredentials: true,
       });
-      console.log("checkAuth response:", response.data);
+    
 
   
       set({
@@ -166,4 +166,26 @@ export const useAuthStore = create((set) => ({
       throw error;
     }
   }
+
+,
+  updatePassword: async (password, newPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.put(`${API_URL}/update-password`, {
+        password,
+        newPassword,
+      });
+      set({
+        message: response.data.message,
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        error: error.response.data.message || "Error Updating Password",
+        isLoading: false,
+      });
+      throw error;
+    }
+  }
 }));
+

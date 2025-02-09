@@ -9,6 +9,7 @@ import {
   resetPassword,
   checkAuth,
   googleAuthCallback,
+  updatePassword,
 } from "../controllers/auth.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { isAuthenticated } from "../middleware/isAuthenticated.js";
@@ -19,6 +20,7 @@ router.get("/check-auth", verifyToken, isAuthenticated, checkAuth);
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", verifyToken, isAuthenticated, logout);
+router.put("/update-password",verifyToken,isAuthenticated,updatePassword);
 
 router.post("/verify-email", verifyEmail);
 router.post("/forgot-password", forgotPassword);

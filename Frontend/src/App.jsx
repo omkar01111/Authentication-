@@ -12,6 +12,7 @@ import LoadingSpinner from "./components/LoadingSpinner.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import GoogleCallback from "./pages/GoogleCallback.jsx";
+import UpdatePassword from "./pages/UpdatePassword.jsx";
 
 
 
@@ -91,6 +92,15 @@ if(isCheckingAuth)return<LoadingSpinner/>
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+<Route
+          path="/update-password"
+          element={
+            <ProtectedRoute>
+              <UpdatePassword />
             </ProtectedRoute>
           }
         />
