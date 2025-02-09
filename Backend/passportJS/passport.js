@@ -14,13 +14,15 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.CLIENT_URL}/api/auth/google/callback`
- ||" http://localhost:5000/api/auth/google/callback",
+      callbackURL: `https://authentication-asy3.onrender.com/api/auth/google/callback`
+ ||"http://localhost:5000/api/auth/google/callback",
      
       
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        console.log(`${process.env.CLIENT_URL}/api/auth/google/callback`);
+        
         // Check if user exists by email
         let user = await User.findOne({ email: profile._json.email });
 
